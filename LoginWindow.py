@@ -5,6 +5,9 @@ from tkinter import *
 
 import random
 
+# cheatsheet :
+#http://apprendre-python.com/page-tkinter-interface-graphique-python-tutoriel
+
 class LoginWindow(object):
 
 	def __init__(self):
