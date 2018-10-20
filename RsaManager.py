@@ -1,3 +1,6 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
 import Crypto
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
