@@ -1,0 +1,5 @@
+Interface pour le tchat
+Classe pour la connexion irc
+Classe pour le chiffrement RSA
+Classe pour le chiffrement AES
+
