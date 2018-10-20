@@ -67,6 +67,9 @@ https://github.com/masterccc/IRCrypt\n
 		msg += '\n'+ self.pseudo + '@' + self.channel + '...'
 		self.txt_chat.insert(INSERT,msg)
 
+	def push_msg(self, msg):
+		self.txt_chat.insert(INSERT,msg)
+
 	def helpbox(self):
 		messagebox.showinfo("About", self.helpmsg)
 

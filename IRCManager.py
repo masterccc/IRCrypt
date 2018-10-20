@@ -27,6 +27,7 @@ class IRCManager(object):
 		listen.start()
 		self.irc_connect()
 
+	# IRC connexion, set nickname, join channel
 	def irc_connect(self):
 		user_str = "USER " #+ self.nick +" "+ self.nick +" "+ self.nick
 		user_str +=  " " + self.nick + " * irc.freenode.net :purple\n" # Je suis pidgin
@@ -34,26 +35,28 @@ class IRCManager(object):
 		self.irc.send(("NICK "+ self.nick +"\n").encode())
 		self.irc.send("NOTICE freenode-connect :.VERSION Purple IRC\n".encode()) # Réponse CTCP
 		self.irc.send(("JOIN #"+ self.channel +"\n").encode())
+		# /names result automatically send from srv
 
+	# Answer to ping
 	def ping(self):
-		self.irc.send("bytes :pingis\n".encode())
+		self.irc.send(":pingis\n".encode())
+		print("PONG")
 
-	def hello(self):
-		print("Débute la communication")
-
+	# Wait for incomming messages
 	def listener(self):
 		while (self.run):
 			rcv = self.irc.recv(2048)
 			rcv = rcv.decode("utf-8")
 			print("reçu : ", rcv)
 			try:
-				if ircmsg.find("PING :") != -1:
+				if rcv.find("PING :") != -1:
 					self.ping()
+				elif rcv.find(self.nick + " @ #" + self.channel + " :" + self.nick) != -1 :
+					raw_list = rcv.split('\n')[0].split(" :" + self.nick)[1]
+					print("pseudales:", raw_list.replace('@','').split())
 			except:
 				pass # not a ping
 
-
-
 if __name__ == '__main__':
 	print("test")
-	irc = IRCManager(None, "irc.freenode.net", 6667, "i4m4n4lbatr05", "genius564")
+	irc = IRCManager(None, "irc.freenode.net", 6667, "i4m4n4lbatr05", "Eenius564")
