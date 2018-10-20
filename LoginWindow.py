@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
  
 from tkinter import * 
-
+from ChatWindow import ChatWindow
 import random
 
 # cheatsheet :
@@ -46,6 +46,8 @@ class LoginWindow(object):
 		print("connexion...")
 		print(self.srv.get(),':',self.port.get())
 		print(self.pseudo.get() +"@#" + self.canal.get())
+		#self.win_connexion.quit()
+		ChatWindow(self.win_connexion, self.srv.get(), self.port.get(), self.canal.get(), self.pseudo.get())
 
 	def ui_conf(self,parent,label_value,default_value):
 
