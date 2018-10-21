@@ -37,40 +37,46 @@ class IRCManager(object):
 		self.irc.connect(self.server)
 		self.irc.run_loop()
 
+	# À lancer après connexion au serveur
 	def on_welcome(self, bot):
 		bot.join_channel("#S3cr3tH1de0ut")
 	
+	# À lancer lors de la connexion au serveur
 	def on_connect(self, bot):
 	    self.irc.set_nick(self.nick)
 	    self.irc.send_user_packet("HelloBot")
 
 
-	def unformat_zlib_64(msg):
+	# Les chaînes circulent compressée (zlib) et encodées (base64):
+	# Decode et decompresse
+	def unformat_zlib_64(self, msg):
 		return zlib.decompress(base64.b64decode(msg))
 
-	def format_zlib_64(msg):
+	# Compresse et encode
+	def format_zlib_64(self, msg):
 		return base64.b64encode(zlib.compress(msg))
 
-	# We receive base64(compress(pem_key))
-	def on_private_message(self, bot, channel, sender, message):
+	# Reception d'un message privé
+	def on_private_message(self, obj, sender, message):
 		if( (message[:5] == "!KEY:") and  len(message) > 5):
 			
 			msg_tab =  message.split(':')
 			if(len(msg_tab) == 2 and msg_tab[1] != ''):
 				
 				# Import friend's RSA key
-				pem = unformat_zlib_64(message.split(":")[1])
+				pem = self.unformat_zlib_64(message.split(":")[1])
 				self.chatbox.push_msg("Received PEM\n")
 				self.chatbox.push_msg(pem + "\n")
 				self.rsa_manager.import_friend_key(pem)
 
 				# Send pubkey to friend
 				self.chatbox.push_msg("Sending PEM ...\n")
-				self.irc.send_message(sender, format_zlib_64(self.rsa_manager.export_key_pem()))
+				my_pem = self.format_zlib_64(self.rsa_manager.export_key_pem())
+				self.irc.send_message(sender, my_pem)
 
 
-		print("reçu: ", message)
-		self.chatbox.push_msg(sender + ":" + message + "\n")
+		print("reçu: message:", message, "|sender :", sender)
+		self.chatbox.push_msg(sender + " : " + message + "\n")
 
 
 if __name__ == '__main__':

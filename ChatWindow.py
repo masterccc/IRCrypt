@@ -19,14 +19,13 @@ class ChatWindow(threading.Thread):
 		self.port    = int(port)
 		self.pseudo  = pseudo
 		self.channel = canal
-		self.IRCManager = IRCManager(self, self.server, self.port, self.pseudo, self.channel)
+		self.irc_mgr = IRCManager(self, self.server, self.port, self.channel, self.pseudo)
 		self.helpmsg =  "IRCrypt - End to end encrypted messaging over IRC."
 		self.helpmsg += "\nMore informations:"
 		self.helpmsg += "\nhttps://github.com/masterccc/IRCrypt\n"
 		parent.destroy()
 		self.start()
-
-		listener = threading.Thread(target=self.IRCManager.irc_connect)
+		listener = threading.Thread(target=self.irc_mgr.irc_connect)
 		listener.start()
 		listener.join()
 
@@ -64,17 +63,10 @@ class ChatWindow(threading.Thread):
 		self.win_chat.mainloop()
 
 	def do_exit(self):
-		self.IRCManager.run = False
+		self.irc_mgr.run = False
 		self.win_chat.destroy()
-		self.IRCManager.close_conn()
+		self.irc_mgr.close_conn()
 		sys.exit(0)
-
-
-	# Banniere de connexion
-	def connect_msg(self):		
-		msg =  "Connexion " + self.server + ":" + str(self.port)
-		msg += '\n'+ self.pseudo + '@' + self.channel + '...'
-		self.txt_chat.insert(INSERT,msg)
 
 	def push_msg(self, msg):
 		self.txt_chat.insert(INSERT,msg)
