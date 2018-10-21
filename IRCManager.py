@@ -22,13 +22,14 @@ class IRCManager(object):
 		self.chatbox     =   chatbox_window
 		self.run = True
 
-		self.irc.connect((self.server, self.port))
-		listen = threading.Thread(target=self.listener)
-		listen.start()
-		self.irc_connect()
+	def close_conn(self):
+		self.irc.shutdown(socket.SHUT_RDWR)
 
 	# IRC connexion, set nickname, join channel
 	def irc_connect(self):
+		self.irc.connect((self.server, self.port))
+		listen = threading.Thread(target=self.listener)
+		listen.start()
 		user_str = "USER " #+ self.nick +" "+ self.nick +" "+ self.nick
 		user_str +=  " " + self.nick + " * irc.freenode.net :purple\n" # Je suis pidgin
 		self.irc.send(user_str.encode())
@@ -47,16 +48,18 @@ class IRCManager(object):
 		while (self.run):
 			rcv = self.irc.recv(2048)
 			rcv = rcv.decode("utf-8")
-			print("reçu : ", rcv)
+			#print("reçu : ", rcv)
 			try:
 				if rcv.find("PING :") != -1:
 					self.ping()
 				elif rcv.find(self.nick + " @ #" + self.channel + " :" + self.nick) != -1 :
 					raw_list = rcv.split('\n')[0].split(" :" + self.nick)[1]
 					print("pseudales:", raw_list.replace('@','').split())
+				else:
+					self.chatbox.push_msg(rcv)
 			except:
 				pass # not a ping
 
 if __name__ == '__main__':
-	print("test")
+	print("IRCManager test :")
 	irc = IRCManager(None, "irc.freenode.net", 6667, "i4m4n4lbatr05", "Eenius564")
