@@ -43,8 +43,6 @@ class LoginWindow(object):
 		self.win_connexion.mainloop()
 
 	def connexion(self):
-		print(self.srv.get(),':',self.port.get())
-		print(self.pseudo.get() +"@#" + self.canal.get())
 		ChatWindow(self.win_connexion, self.srv.get(), self.port.get(), self.canal.get(), self.pseudo.get())
 
 	def ui_conf(self,parent,label_value,default_value):

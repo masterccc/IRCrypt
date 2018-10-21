@@ -23,16 +23,15 @@ class IRCManager(object):
 		self.irc         =   None
 		self.rsa_manager =   RsaManager()
 		self.chatbox     =   chatbox_window
-		self.run = True
+		self.friend      =   None
+		self.msg_prefix  =   "m:"
 
 	# IRC connexion, set nickname, join channel
 	def irc_connect(self):
 		self.irc = IRCConnection()
 		self.irc.on_connect.append(self.on_connect)
 		self.irc.on_welcome.append(self.on_welcome)
-		#self.irc.on_public_message.append(self.on_message)
 		self.irc.on_private_message.append(self.on_private_message)
-
 		self.irc.connect(self.server)
 		self.irc.run_loop()
 
@@ -63,7 +62,12 @@ class IRCManager(object):
 			if(len(msg_tab) == 2 and msg_tab[1] != ''):
 				
 				# Import friend's RSA key
-				pem = self.unformat_zlib_64(message.split(":")[1])
+				try:
+					pem = self.unformat_zlib_64(message.split(":")[1])
+				except binascii.Error :
+					self.chatbox.push_msg("Bad PEM reveived")
+					return
+
 				self.chatbox.push_msg("Received PEM\n")
 				self.chatbox.push_msg(pem + "\n")
 				self.rsa_manager.import_friend_key(pem)
@@ -72,11 +76,21 @@ class IRCManager(object):
 				self.chatbox.push_msg("Sending PEM ...\n")
 				my_pem = self.format_zlib_64(self.rsa_manager.export_key_pem())
 				self.irc.send_message(sender, my_pem)
-
+				self.friend = sender
 
 		print("reçu: message:", message, "|sender :", sender)
 		self.chatbox.push_msg(sender + " : " + message + "\n")
 
+	def encrypt_send_msg(self, message):
+
+		if(not self.rsa_manager):
+			self.chatbox.push_msg("Aucun contact selectionné\n")
+			return
+		if(message == ""):
+			return
+		message = self.msg_prefix + message
+		self.rsa_manager._encrypt(message)
+		self.irc.send_message(self.friend, format_zlib_64(message))
 
 if __name__ == '__main__':
 	print("IRCManager test :")

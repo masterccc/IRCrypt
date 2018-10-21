@@ -25,7 +25,7 @@ class RsaManager(object):
 	# Encrypt message with friend's key
 	def _encrypt(self,msg):
 		cipher = PKCS1_OAEP.new(self.friend_key.publickey())
-		ciphertext = cipher.encrypt(msg)
+		ciphertext = cipher.encrypt(msg.encode())
 		return ciphertext
 
 	# Export public key (pem format)
@@ -41,7 +41,7 @@ class RsaManager(object):
 	def decrypt_msg(self, ciphertext):
 		cipher = PKCS1_OAEP.new(self.key)
 		message = cipher.decrypt(ciphertext)
-		return message
+		return message.decode('utf-8')
 
 
 if __name__ == '__main__':

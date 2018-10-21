@@ -60,6 +60,7 @@ class ChatWindow(threading.Thread):
 		self.chat_pan.add(self.btn_send)
 		self.chat_pan.pack()
 
+		self.print_ban()
 		self.win_chat.mainloop()
 
 	def do_exit(self):
@@ -78,6 +79,12 @@ class ChatWindow(threading.Thread):
 		_msg = self.txt_send.get("1.0","end-1c").strip()
 		self.txt_send.delete("0.0","end")
 		print("send" + _msg)
+		self.irc_mgr.encrypt_send_msg(_msg)
+
+	def print_ban(self):
+		self.push_msg("Connexion...\n")
+		self.push_msg(self.server + ':' + str(self.port) + "\n")
+		self.push_msg(self.pseudo +"@#" + self.channel + "\n")
 
 if __name__ == "__main__":
 	print("main...")
