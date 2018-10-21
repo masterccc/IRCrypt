@@ -5,6 +5,10 @@ import socket
 import base64
 import threading
 from RsaManager import RsaManager
+from IrcConnection import IRCConnection
+import zlib
+import base64
+
 
 class IRCManager(object):
 
@@ -17,48 +21,57 @@ class IRCManager(object):
 		self.ident       =   self.botname = self.nick = pseudo
 		self.channel     =   canal
 		self.realname    =   "Real " + self.ident
-		self.irc         =   socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.irc         =   None
 		self.rsa_manager =   RsaManager()
 		self.chatbox     =   chatbox_window
 		self.run = True
 
-	def close_conn(self):
-		self.irc.shutdown(socket.SHUT_RDWR)
-
 	# IRC connexion, set nickname, join channel
 	def irc_connect(self):
-		self.irc.connect((self.server, self.port))
-		listen = threading.Thread(target=self.listener)
-		listen.start()
-		user_str = "USER " #+ self.nick +" "+ self.nick +" "+ self.nick
-		user_str +=  " " + self.nick + " * irc.freenode.net :purple\n" # Je suis pidgin
-		self.irc.send(user_str.encode())
-		self.irc.send(("NICK "+ self.nick +"\n").encode())
-		self.irc.send("NOTICE freenode-connect :.VERSION Purple IRC\n".encode()) # Réponse CTCP
-		self.irc.send(("JOIN #"+ self.channel +"\n").encode())
-		# /names result automatically send from srv
+		self.irc = IRCConnection()
+		self.irc.on_connect.append(self.on_connect)
+		self.irc.on_welcome.append(self.on_welcome)
+		#self.irc.on_public_message.append(self.on_message)
+		self.irc.on_private_message.append(self.on_private_message)
 
-	# Answer to ping
-	def ping(self):
-		self.irc.send(":pingis\n".encode())
-		print("PONG")
+		self.irc.connect(self.server)
+		self.irc.run_loop()
 
-	# Wait for incomming messages
-	def listener(self):
-		while (self.run):
-			rcv = self.irc.recv(2048)
-			rcv = rcv.decode("utf-8")
-			#print("reçu : ", rcv)
-			try:
-				if rcv.find("PING :") != -1:
-					self.ping()
-				elif rcv.find(self.nick + " @ #" + self.channel + " :" + self.nick) != -1 :
-					raw_list = rcv.split('\n')[0].split(" :" + self.nick)[1]
-					print("pseudales:", raw_list.replace('@','').split())
-				else:
-					self.chatbox.push_msg(rcv)
-			except:
-				pass # not a ping
+	def on_welcome(self, bot):
+		bot.join_channel("#S3cr3tH1de0ut")
+	
+	def on_connect(self, bot):
+	    self.irc.set_nick(self.nick)
+	    self.irc.send_user_packet("HelloBot")
+
+
+	def unformat_zlib_64(msg):
+		return zlib.decompress(base64.b64decode(msg))
+
+	def format_zlib_64(msg):
+		return base64.b64encode(zlib.compress(msg))
+
+	# We receive base64(compress(pem_key))
+	def on_private_message(self, bot, channel, sender, message):
+		if( (message[:5] == "!KEY:") and  len(message) > 5):
+			
+			msg_tab =  message.split(':')
+			if(len(msg_tab) == 2 and msg_tab[1] != ''):
+				
+				# Import friend's RSA key
+				pem = unformat_zlib_64(message.split(":")[1])
+				self.chatbox.push_msg("Received PEM\n")
+				self.chatbox.push_msg(pem + "\n")
+				self.rsa_manager.import_friend_key(pem)
+
+				# Send pubkey to friend
+				self.chatbox.push_msg("Sending PEM ...\n")
+				self.irc.send_message(sender, format_zlib_64(self.rsa_manager.export_key_pem()))
+
+
+		print("reçu: ", message)
+		self.chatbox.push_msg(sender + ":" + message + "\n")
+
 
 if __name__ == '__main__':
 	print("IRCManager test :")

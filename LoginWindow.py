@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
- 
+
 from tkinter import * 
 from ChatWindow import ChatWindow
 import random
@@ -12,7 +12,7 @@ class LoginWindow(object):
 
 	def __init__(self):
 
-		self.server  = "irc.freenode.net"
+		self.server  = "irc.epiknet.org"
 		self.port    = "6667"
 		self.login   = "Toto" + str(random.randint(1,9999))
 		self.channel = "S3cr3tH1de0ut"
@@ -43,10 +43,8 @@ class LoginWindow(object):
 		self.win_connexion.mainloop()
 
 	def connexion(self):
-		print("connexion...")
 		print(self.srv.get(),':',self.port.get())
 		print(self.pseudo.get() +"@#" + self.canal.get())
-		#self.win_connexion.quit()
 		ChatWindow(self.win_connexion, self.srv.get(), self.port.get(), self.canal.get(), self.pseudo.get())
 
 	def ui_conf(self,parent,label_value,default_value):
