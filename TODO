@@ -1,5 +1,15 @@
 Interface pour le tchat :
-Classe pour la connexion irc
+-Pouvoir selectionner une personne avec qui échanger la clé parmis une liste de connectés. Une fois la personne choisie, on ne peut plus accepter d'autres clés
+-Créer une fonction d'envoi de message privés (en clairs) sur irc
+-Créer une fonction de reception de messages privés
+Envoyer/recevoir/importer/exporter les clés
+
+Reception des messages:
+Créer un protocole pour les messages (différencier fichiers/messages)
+Créer une fonction de message privé pour envoyer les messages chiffrés sur irc
+Split IRCManager(juste IRC + socket ) avec une autre classe qui permet de gérer l'échange en lui même
+Prevoir le cas où la personne se deconnecte
+
 Classe pour le chiffrement AES
 Choisir une langue pour le projet
 

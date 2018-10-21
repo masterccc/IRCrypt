@@ -17,8 +17,7 @@ class IRCManager(object):
 		# Connexion details
 		self.server      =   server
 		self.port        =   int(port)
-		self.nick        =   pseudo
-		self.ident       =   self.botname = self.nick = pseudo
+		self.nick        =   self.ident = self.botname = pseudo
 		self.channel     =   canal
 		self.realname    =   "Real " + self.ident
 		self.irc         =   None
