@@ -50,9 +50,25 @@ class IRCManager(object):
 	def unformat_zlib_64(self, msg):
 		return zlib.decompress(base64.b64decode(msg))
 
+	def base64_string(self, msg):
+		return base64.b64encode(msg.encode()).decode('utf-8')
+
 	# Compresse et encode
 	def format_zlib_64(self, msg):
-		return base64.b64encode(zlib.compress(msg))
+		return self.base64_string(zlib.compress(msg)).decode('utf-8')
+>
+	def send_key_first(self):
+		# Send pubkey to friend
+		self.chatbox.push_msg("Sending PEM ...\n")
+
+		msg = "!KEY:"
+		my_pem = self.format_zlib_64(self.rsa_manager.export_key_pem())
+		
+		self.irc.send_message(sender, my_pem)
+		self.friend = sender
+	
+	# Enlever le b'' du base 64
+	# Enlever les \n dela pem
 
 	# Reception d'un message privé
 	def on_private_message(self, obj, sender, message):
@@ -72,11 +88,7 @@ class IRCManager(object):
 				self.chatbox.push_msg(pem + "\n")
 				self.rsa_manager.import_friend_key(pem)
 
-				# Send pubkey to friend
-				self.chatbox.push_msg("Sending PEM ...\n")
-				my_pem = self.format_zlib_64(self.rsa_manager.export_key_pem())
-				self.irc.send_message(sender, my_pem)
-				self.friend = sender
+				self.send_key_first(self.channel)
 
 		print("reçu: message:", message, "|sender :", sender)
 		self.chatbox.push_msg(sender + " : " + message + "\n")

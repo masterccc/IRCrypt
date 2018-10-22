@@ -121,6 +121,9 @@ class IRCConnection:
     def join_channel(self, channel_name):
         self.send_line("JOIN {}".format(channel_name))
 
+    def list_channel(self, channel_name):
+        self.send_line("NAMES {}".format(channel_name))
+        
     def set_nick(self, nick):
         self.nick = nick
         self.send_line("NICK {}".format(nick))
