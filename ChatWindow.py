@@ -54,7 +54,31 @@ class ChatWindow(threading.Thread):
 		self.btn_send=Button(self.win_chat, text="Envoyer", command=self.post_message)
 		self.btn_send.pack()
 
-		# Ajout des éléments au layout
+		# Barre de refresh/choix du correspondant
+		
+		## Bouton refresh
+		self.tool_pan = PanedWindow(self.chat_pan, orient=HORIZONTAL)
+		self.btn_refresh=Button(self.tool_pan, text="Refresh names", command=self.irc_mgr.refresh_names)
+		self.btn_refresh.pack()
+		
+		## Champ text
+		self.friend_val = StringVar() 
+		self.friend_val.set("")
+		self.txt_friend = Entry(self.tool_pan, textvariable=self.friend_val, width=15)
+		self.txt_friend.pack()
+
+		## Bouton select friend
+		self.btn_selfriend=Button(self.tool_pan, text="Choose as friend", command=self.ui_choose_friend)
+		self.btn_selfriend.pack()
+
+		# Ajout des éléments aus layouts
+		
+		self.tool_pan.add(self.btn_refresh)
+		self.tool_pan.add(self.txt_friend)
+		self.tool_pan.add(self.btn_selfriend)
+		self.tool_pan.pack()
+
+		self.chat_pan.add(self.tool_pan)
 		self.chat_pan.add(self.txt_chat)
 		self.chat_pan.add(self.txt_send)
 		self.chat_pan.add(self.btn_send)
@@ -75,11 +99,23 @@ class ChatWindow(threading.Thread):
 	def helpbox(self):
 		messagebox.showinfo("About", self.helpmsg)
 
-	def post_message(self):
+	def post_message(self, bind=None):
 		_msg = self.txt_send.get("1.0","end-1c").strip()
 		self.txt_send.delete("0.0","end")
 		print("send" + _msg)
-		self.irc_mgr.encrypt_send_msg(_msg)
+		print(_msg)
+		if( _msg[:5] == '/list'):
+			self.irc_mgr.irc.list_channel(self.channel)
+			self.push_msg('/list\n')
+		if(_msg != ""):
+			self.irc_mgr.encrypt_send_msg(_msg)
+
+	def ui_choose_friend(self):
+		if(self.friend_val.get() == ""):
+			self.push_msg("Impossible d'ajouter cette personne")
+			return
+		self.irc_mgr.choose_friend(self.friend_val.get())
+		print("choosed :", self.friend_val.get())
 
 	def print_ban(self):
 		self.push_msg("Connexion...\n")

@@ -12,7 +12,8 @@ class LoginWindow(object):
 
 	def __init__(self):
 
-		self.server  = "irc.epiknet.org"
+		#self.server  = "irc.epiknet.org"
+		self.server  = "irc.freenode.net"
 		self.port    = "6667"
 		self.login   = "Toto" + str(random.randint(1,9999))
 		self.channel = "S3cr3tH1de0ut"
