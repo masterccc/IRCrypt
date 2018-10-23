@@ -102,11 +102,6 @@ class ChatWindow(threading.Thread):
 	def post_message(self, bind=None):
 		_msg = self.txt_send.get("1.0","end-1c").strip()
 		self.txt_send.delete("0.0","end")
-		print("send" + _msg)
-		print(_msg)
-		if( _msg[:5] == '/list'):
-			self.irc_mgr.irc.list_channel(self.channel)
-			self.push_msg('/list\n')
 		if(_msg != ""):
 			self.irc_mgr.encrypt_send_msg(_msg)
 

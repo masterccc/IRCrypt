@@ -57,7 +57,7 @@ class IRCManager(object):
 	def rcv_names(self, nicklist):
 		print("Reception des pseudos:")
 		print(nicklist)
-		self.connected = nicklist
+		self.connected = [ ni for ni in nicklist if ni != self.nick ]
 		self.chatbox.push_msg("Liste des utilisateurs en ligne :\n")
 		self.chatbox.push_msg(",".join(nicklist) + "\n")
 
@@ -66,10 +66,14 @@ class IRCManager(object):
 
 	def choose_friend(self,name):
 
+		if(self.friend != None):
+			self.chatbox.push_msg("Already bound to friend" + "\n")
+			return
+
 		if name not in self.connected:
 			print("Friend not in list")
 			print("list:", str(self.connected))
-			return 1
+			return
 		else:
 			self.friend = name
 			self.send_key_first(self.friend)
@@ -100,12 +104,12 @@ class IRCManager(object):
 		msg = "!KEY:"
 		my_pem = self.format_zlib_64(self.rsa_manager.export_key_pem())
 		
-		self.irc.send_message(self.friend, my_pem)
+		self.irc.send_message(self.friend, msg + my_pem)
 
 	# Reception d'un message privé
 	def on_private_message(self, obj, sender, message):
+		
 		if( (message[:5] == "!KEY:") and  len(message) > 5):
-			
 			msg_tab =  message.split(':')
 			if(len(msg_tab) == 2 and msg_tab[1] != ''):
 				
@@ -113,16 +117,28 @@ class IRCManager(object):
 				try:
 					pem = self.unformat_zlib_64(message.split(":")[1])
 				except :
-					self.chatbox.push_msg("Bad PEM reveived")
+					self.chatbox.push_msg("Bad PEM received")
 					return
 
 				self.chatbox.push_msg("Received PEM\n")
 				self.chatbox.push_msg(pem.decode("utf-8") + "\n")
 				self.rsa_manager.import_friend_key(pem)
 
-				self.send_key_first(self.channel)
+				self.send_key_first(sender)
+				self.chatbox.push_msg("renvoie de la clé a " + sender)
+		elif(self.rsa_manager.friend_key):
+			self.chatbox.push_msg(self.decrypt_received_msg(message))
 
 		self.chatbox.push_msg(sender + " :(cleartext) " + message + "\n")
+
+	def decrypt_received_msg(self, message):
+		
+		try:
+			unc = self.unformat_zlib_64(message)
+			return unc
+		except:
+			return "unformated message received\n"
+	
 
 	def encrypt_send_msg(self, message):
 
