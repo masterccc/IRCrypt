@@ -56,7 +56,7 @@ class IRCManager(object):
 	# Compresse et encode
 	def format_zlib_64(self, msg):
 		return self.base64_string(zlib.compress(msg)).decode('utf-8')
->
+
 	def send_key_first(self):
 		# Send pubkey to friend
 		self.chatbox.push_msg("Sending PEM ...\n")
