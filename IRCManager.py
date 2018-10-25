@@ -59,7 +59,8 @@ class IRCManager(object):
 		print(nicklist)
 		self.connected = [ ni for ni in nicklist if ni != self.nick ]
 		self.chatbox.push_msg("Liste des utilisateurs en ligne :\n")
-		self.chatbox.push_msg(",".join(nicklist) + "\n")
+		self.chatbox.push_msg(",".join(self.connected) + "\n")
+		self.chatbox.update_contacts(self.connected)
 
 	def on_notice(self, msg):
 		self.chatbox.push_msg(msg + "\n")
@@ -75,7 +76,6 @@ class IRCManager(object):
 			print("list:", str(self.connected))
 			return
 		else:
-			self.friend = name
 			self.send_key_first(self.friend)
 
 	# Les chaînes circulent compressées (zlib) et encodées (base64):
@@ -89,7 +89,6 @@ class IRCManager(object):
 
 	# Convertit en base 64, récupère la chaine correspondante
 	def base64_string(self, msg):
-		# msg = bytes
 		return base64.b64encode(msg).decode('utf-8')
 
 	# Compresse et encode
@@ -108,8 +107,8 @@ class IRCManager(object):
 
 	# Reception d'un message privé
 	def on_private_message(self, obj, sender, message):
-		
-		if( (message[:5] == "!KEY:") and  len(message) > 5):
+
+		if( (not self.friend) and (message[:5] == "!KEY:") and  len(message) > 5):
 			msg_tab =  message.split(':')
 			if(len(msg_tab) == 2 and msg_tab[1] != ''):
 				
@@ -123,7 +122,7 @@ class IRCManager(object):
 				self.chatbox.push_msg("Received PEM\n")
 				self.chatbox.push_msg(pem.decode("utf-8") + "\n")
 				self.rsa_manager.import_friend_key(pem)
-
+				self.friend = sender
 				self.send_key_first(sender)
 				self.chatbox.push_msg("renvoie de la clé a " + sender)
 		elif(self.rsa_manager.friend_key):
@@ -149,7 +148,7 @@ class IRCManager(object):
 			return
 		message = self.msg_prefix + message
 		self.rsa_manager._encrypt(message)
-		self.irc.send_message(self.friend, format_zlib_64(message))
+		self.irc.send_message(self.friend, self.format_zlib_64(message))
 
 if __name__ == '__main__':
 	print("IRCManager test :")

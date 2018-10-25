@@ -23,12 +23,14 @@ class ChatWindow(threading.Thread):
 		self.helpmsg =  "IRCrypt - End to end encrypted messaging over IRC."
 		self.helpmsg += "\nMore informations:"
 		self.helpmsg += "\nhttps://github.com/masterccc/IRCrypt\n"
+		self.default_contact = "--- Contacts ---"
 		parent.destroy()
 		self.start()
 		listener = threading.Thread(target=self.irc_mgr.irc_connect)
 		listener.start()
 		listener.join()
 
+	# Thread pour gérer l'interface graphique
 	def run(self):
 		
 		self.win_chat = Tk()
@@ -61,20 +63,18 @@ class ChatWindow(threading.Thread):
 		self.btn_refresh=Button(self.tool_pan, text="Refresh names", command=self.irc_mgr.refresh_names)
 		self.btn_refresh.pack()
 		
-		## Champ text
-		self.friend_val = StringVar() 
-		self.friend_val.set("")
-		self.txt_friend = Entry(self.tool_pan, textvariable=self.friend_val, width=15)
-		self.txt_friend.pack()
+		## selection contact
+		self.lst_users = Listbox(self.tool_pan, height=1)
+		self.lst_users.pack()
+		self.lst_users.insert(END, self.default_contact)
 
 		## Bouton select friend
 		self.btn_selfriend=Button(self.tool_pan, text="Choose as friend", command=self.ui_choose_friend)
 		self.btn_selfriend.pack()
 
 		# Ajout des éléments aus layouts
-		
 		self.tool_pan.add(self.btn_refresh)
-		self.tool_pan.add(self.txt_friend)
+		self.tool_pan.add(self.lst_users)
 		self.tool_pan.add(self.btn_selfriend)
 		self.tool_pan.pack()
 
@@ -93,24 +93,42 @@ class ChatWindow(threading.Thread):
 		self.irc_mgr.close_conn()
 		sys.exit(0)
 
+	# Affiche un message dans la conversation
 	def push_msg(self, msg):
 		self.txt_chat.insert(INSERT,msg)
 
+	# fenêtre "about"
 	def helpbox(self):
 		messagebox.showinfo("About", self.helpmsg)
 
+	# Envoie un message depuis le champs texte
 	def post_message(self, bind=None):
 		_msg = self.txt_send.get("1.0","end-1c").strip()
 		self.txt_send.delete("0.0","end")
 		if(_msg != ""):
 			self.irc_mgr.encrypt_send_msg(_msg)
 
+	# Met à jour la liste de contacts dans l'interface
+	def update_contacts(self, new_list):
+		self.lst_users.delete(0, END)
+		
+		if(len(new_list) == 0):
+			self.lst_users.insert(END,self.default_contact)
+		else:
+			for item in new_list:
+				self.lst_users.insert(END, item)
+
+	# Selectionne un contact avec qui communiquer
 	def ui_choose_friend(self):
-		if(self.friend_val.get() == ""):
+		
+		ls = self.lst_users.get(0)
+
+		if(len(ls) > 0 and ls != self.default_contact):
+			self.irc_mgr.choose_friend(ls)
+			print("choosed :", ls)
+		else :
 			self.push_msg("Impossible d'ajouter cette personne")
 			return
-		self.irc_mgr.choose_friend(self.friend_val.get())
-		print("choosed :", self.friend_val.get())
 
 	def print_ban(self):
 		self.push_msg("Connexion...\n")
