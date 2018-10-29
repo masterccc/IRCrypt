@@ -24,7 +24,6 @@ class IRCManager(object):
 		self.rsa_manager =   RsaManager()
 		self.chatbox     =   chatbox_window
 		self.friend      =   None
-		self.msg_prefix  =   "m:"
 		self.connected   =   []
 
 	# IRC connexion, set nickname, join channel
@@ -39,7 +38,9 @@ class IRCManager(object):
 		self.irc.run_loop()
 
 	def close_conn(self):
-		self.irc.shutdown(socket.SHUT_RDWR)
+		self.irc.socket.shutdown(socket.SHUT_RDWR)
+
+
 	# À lancer après connexion au serveur
 	def on_welcome(self, bot):
 		bot.join_channel("#S3cr3tH1de0ut")
@@ -76,7 +77,7 @@ class IRCManager(object):
 			print("list:", str(self.connected))
 			return
 		else:
-			self.send_key_first(self.friend)
+			self.send_key_first(name)
 
 	# Les chaînes circulent compressées (zlib) et encodées (base64):
 	# Decode et decompresse
@@ -87,23 +88,22 @@ class IRCManager(object):
 			self.chatbox.push_msg("Error while decoding message")
 			return ""
 
-	# Convertit en base 64, récupère la chaine correspondante
-	def base64_string(self, msg):
-		return base64.b64encode(msg).decode('utf-8')
-
 	# Compresse et encode
-	def format_zlib_64(self, msg):
-		return self.base64_string(zlib.compress(msg))
-
+	def format_zlib_64(self, msg, key=False):
+		if(key):
+			return base64.b64encode(zlib.compress(msg)).decode("utf-8")
+		return base64.b64encode(zlib.compress(msg.encode())).decode("utf-8")
+ 
 	# Amorce l'échange de clés
 	def send_key_first(self, friend_name):
 		# Send pubkey to friend
-		self.chatbox.push_msg("Sending PEM ...\n")
+		self.chatbox.push_msg("Sending Public Key ...\n")
 
 		msg = "!KEY:"
 		my_pem = self.format_zlib_64(self.rsa_manager.export_key_pem())
 		
-		self.irc.send_message(self.friend, msg + my_pem)
+		self.irc.send_message(friend_name, msg + my_pem)
+		self.chatbox.push_msg(my_pem + "\n")
 
 	# Reception d'un message privé
 	def on_private_message(self, obj, sender, message):
@@ -114,30 +114,37 @@ class IRCManager(object):
 				
 				# Import friend's RSA key
 				try:
-					pem = self.unformat_zlib_64(message.split(":")[1])
+					pem = self.unformat_zlib_64(message.split(":")[1]).decode("utf-8")
 				except :
 					self.chatbox.push_msg("Bad PEM received")
 					return
 
-				self.chatbox.push_msg("Received PEM\n")
-				self.chatbox.push_msg(pem.decode("utf-8") + "\n")
+				self.chatbox.push_msg("Received PEM :\n")
+				try:
+					self.chatbox.push_msg(pem + "\n")
+				except:
+					print("Clé reçu en bytes, il faut la decoder")
+					pem = pem.decode('utf-8')
+				
+
 				self.rsa_manager.import_friend_key(pem)
 				self.friend = sender
 				self.send_key_first(sender)
-				self.chatbox.push_msg("renvoie de la clé a " + sender)
-		elif(self.rsa_manager.friend_key):
-			self.chatbox.push_msg(self.decrypt_received_msg(message))
 
-		self.chatbox.push_msg(sender + " :(cleartext) " + message + "\n")
+
+		elif( self.friend and (message[:5] == "!KEY:")):
+			return
+
+		elif(self.rsa_manager.friend_key):
+			self.chatbox.push_rcv_msg(self.decrypt_received_msg(message), sender)
+
+		else:
+			self.chatbox.push_msg("Unknow data from "+ sender + " : " + message + "\n")
 
 	def decrypt_received_msg(self, message):
-		
-		try:
-			unc = self.unformat_zlib_64(message)
-			return unc
-		except:
-			return "unformated message received\n"
-	
+		msgdecode= self.unformat_zlib_64(message)
+		msg = self.rsa_manager.decrypt_msg(msgdecode)
+		return msg
 
 	def encrypt_send_msg(self, message):
 
@@ -146,9 +153,12 @@ class IRCManager(object):
 			return
 		if(message == ""):
 			return
-		message = self.msg_prefix + message
-		self.rsa_manager._encrypt(message)
-		self.irc.send_message(self.friend, self.format_zlib_64(message))
+
+		to_send = self.rsa_manager._encrypt(message)
+		ciphercode = self.format_zlib_64(to_send, True)
+
+		self.irc.send_message(self.friend, ciphercode)
+		self.chatbox.push_rcv_msg(message, "Moi")
 
 if __name__ == '__main__':
 	print("IRCManager test :")

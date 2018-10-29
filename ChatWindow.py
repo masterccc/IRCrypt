@@ -97,6 +97,8 @@ class ChatWindow(threading.Thread):
 	def push_msg(self, msg):
 		self.txt_chat.insert(INSERT,msg)
 
+	def push_rcv_msg(self, msg, sender):
+		self.txt_chat.insert(INSERT,sender + ': ' + msg + '\n')		
 	# fenêtre "about"
 	def helpbox(self):
 		messagebox.showinfo("About", self.helpmsg)

@@ -26,11 +26,13 @@ class RsaManager(object):
 	def _encrypt(self,msg):
 		cipher = PKCS1_OAEP.new(self.friend_key.publickey())
 		ciphertext = cipher.encrypt(msg.encode())
+		print("RSA::Encrypt:")
+		print(msg,"->",ciphertext)
 		return ciphertext
 
 	# Export public key (pem format)
 	def export_key_pem(self):
-		str_key = self.pubkey.exportKey('PEM')
+		str_key = self.pubkey.exportKey('PEM').decode('utf-8')
 		return str_key
 
 	# Import friend's key (pem format)
@@ -45,7 +47,18 @@ class RsaManager(object):
 
 
 if __name__ == '__main__':
-	
+
+	import zlib, base64
+	def unformat_zlib_64( msg):
+		return zlib.decompress(base64.b64decode(msg))
+		
+
+	# Compresse et encode
+	def format_zlib_64( msg, key=False):
+		if(key):
+			return base64.b64encode(zlib.compress(msg)).decode("utf-8")
+		return base64.b64encode(zlib.compress(msg.encode())).decode("utf-8")
+
 	print("test :")
 
 	# Create entities
@@ -58,18 +71,24 @@ if __name__ == '__main__':
 
 	# Print Pem keys
 	print("Alice :")
-	print(alice.export_key_pem().decode('utf-8'))
+	print(alice.export_key_pem())
 	print("Bob :")	
-	print(bob.export_key_pem().decode('utf-8'))
+	print(bob.export_key_pem())
 
 	# Alice ---> Bob
-	cipher = alice._encrypt("Coucou bob ça roule ?".encode())
+	cipher = alice._encrypt("Coucou gfhgfhdfghdfghdfghdfghdfghdfghdfghgfhfghdfghdfghdfghbob ça roule ?")
+	ciphercode = format_zlib_64(cipher, True)
+	print("Alice envoie :")
+	print(ciphercode)
 	print("Bob dechiffre :")
-	msg = bob.decrypt_msg(cipher).decode('utf-8')
+	
+	msgdecode= unformat_zlib_64(ciphercode)
+	msg = bob.decrypt_msg(msgdecode)
+
 	print(msg)
 
 	# Bob ---> Alice
-	cipher = bob._encrypt("ça va très bien !".encode())
+	cipher = bob._encrypt("ça va très bien !")
 	print("Alice dechiffre :")
-	msg = alice.decrypt_msg(cipher).decode('utf-8')
+	msg = alice.decrypt_msg(cipher)
 	print(msg)
